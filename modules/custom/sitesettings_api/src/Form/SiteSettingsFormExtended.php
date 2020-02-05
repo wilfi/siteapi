@@ -18,7 +18,6 @@ class SiteSettingsFormExtended extends SiteInformationForm {
    * @var \Drupal\Core\Messenger\MessengerInterface
    */
   protected $messenger;
-
   /**
    * Constructs SiteSettingsFormExtended .
    *
@@ -78,14 +77,27 @@ class SiteSettingsFormExtended extends SiteInformationForm {
     $site_config = $this->config('system.site');
     $messenger = $this->messenger;
 
+    // Default flag to check if site_api is saved.
+    $siteapiflag = 0;
     // Show status message only if user value is diff from previous.
     if(empty($form_state->getValue('siteapikey')) || $form_state->getValue('siteapikey') === "No API Key yet") {
+      // Clear existing siteapikey.
+      $this->config('system.site')->clear('siteapikey')->save();
       $messenger->addMessage($this->t('Site API Key is not set.'), $messenger::TYPE_STATUS);
     } else if($site_config->get('siteapikey') !== $form_state->getValue('siteapikey')) {
+      $siteapiflag = 1;
+    }
+
+    // Save config only if existing config is diff from user input.
+    if($siteapiflag == 1) {
+      $site_config->set('siteapikey', $form_state->getValue('siteapikey'))->save();
+    }
+
+    // Display message if flag is set and siteapikey config exists.
+    if($site_config->get('siteapikey') && $siteapiflag == 1) {
       $messenger->addMessage($this->t('Site API Key updated.'), $messenger::TYPE_STATUS);
     }
 
-    $site_config->set('siteapikey', $form_state->getValue('siteapikey'))->save();
     parent::submitForm($form, $form_state);
   }
 }

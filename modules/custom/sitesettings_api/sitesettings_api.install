@@ -3,7 +3,7 @@
 /**
 * Implements hook_uninstall().
 */
-function setesettings_api_uninstall(){
+function sitesettings_api_uninstall(){
   // Remove the previously set Site API Key configuration
-  \Drupal::configFactory()->getEditable('system.site.siteapikey')->delete();
+  \Drupal::configFactory()->getEditable('system.site')->clear('siteapikey')->save();
 }
