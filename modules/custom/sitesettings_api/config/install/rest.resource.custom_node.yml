@@ -1,0 +1,17 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - sitesettings_api
+    - serialization
+    - user
+id: custom_node
+plugin_id: custom_node
+granularity: resource
+configuration:
+  methods:
+    - GET
+  formats:
+    - json
+  authentication:
+    - cookie

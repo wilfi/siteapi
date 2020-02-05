@@ -1,0 +1,5 @@
+name: 'Axelerant Assignment'
+type: module
+description: 'Assignment for interview'
+core: 8.x
+package: 'AXL'
