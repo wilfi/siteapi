@@ -10,6 +10,7 @@ use Drupal\path_alias\AliasManagerInterface;
 use Drupal\system\Form\SiteInformationForm;
 use Drupal\Core\Messenger\MessengerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Cache\CacheTagsInvalidator;
 
 /**
  * Extend site settings form.
@@ -24,6 +25,13 @@ class SiteSettingsFormExtended extends SiteInformationForm {
   protected $messenger;
 
   /**
+   * The config factory object.
+   *
+   * @var \Drupal\Core\Cache\CacheTagsInvalidator
+   */
+  protected $invalidator;
+
+  /**
    * Constructs SiteSettingsFormExtended .
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -36,10 +44,13 @@ class SiteSettingsFormExtended extends SiteInformationForm {
    *   The request context.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger service.
+   * @param \Drupal\Core\Cache\CacheTagsInvalidator $invalidator
+   *   The cache factory.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, AliasManagerInterface $alias_manager, PathValidatorInterface $path_validator, RequestContext $request_context, MessengerInterface $messenger) {
+  public function __construct(ConfigFactoryInterface $config_factory, AliasManagerInterface $alias_manager, PathValidatorInterface $path_validator, RequestContext $request_context, MessengerInterface $messenger, CacheTagsInvalidator $invalidator) {
     parent::__construct($config_factory, $alias_manager, $path_validator, $request_context);
     $this->messenger = $messenger;
+    $this->invalidator = $invalidator;
   }
 
   /**
@@ -51,7 +62,8 @@ class SiteSettingsFormExtended extends SiteInformationForm {
       $container->get('path_alias.manager'),
       $container->get('path.validator'),
       $container->get('router.request_context'),
-      $container->get('messenger')
+      $container->get('messenger'),
+      $container->get('cache_tags.invalidator')
     );
   }
 
@@ -86,8 +98,9 @@ class SiteSettingsFormExtended extends SiteInformationForm {
     $siteapiflag = 0;
     // Show status message only if user value is diff from previous.
     if (empty($form_state->getValue('siteapikey')) || $form_state->getValue('siteapikey') === "No API Key yet") {
-      // Clear existing siteapikey.
+      // Clear existing siteapikey and invalidate custom_node cache tag.
       $this->config('system.site')->clear('siteapikey')->save();
+      $this->invalidator->invalidateTags(['config:rest.resource.custom_node']);
       $messenger->addMessage($this->t('Site API Key is not set.'), $messenger::TYPE_WARNING);
     }
     elseif ($site_config->get('siteapikey') !== $form_state->getValue('siteapikey')) {
@@ -97,6 +110,8 @@ class SiteSettingsFormExtended extends SiteInformationForm {
     // Save config only if existing config is diff from user input.
     if ($siteapiflag == 1) {
       $site_config->set('siteapikey', $form_state->getValue('siteapikey'))->save();
+      // Invalidate custom_node cache tag.
+      $this->invalidator->invalidateTags(['config:rest.resource.custom_node']);
     }
 
     // Display message if flag is set and siteapikey config exists.
