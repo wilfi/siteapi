@@ -88,7 +88,7 @@ class SiteSettingsFormExtended extends SiteInformationForm {
     if (empty($form_state->getValue('siteapikey')) || $form_state->getValue('siteapikey') === "No API Key yet") {
       // Clear existing siteapikey.
       $this->config('system.site')->clear('siteapikey')->save();
-      $messenger->addMessage($this->t('Site API Key is not set.'), $messenger::TYPE_STATUS);
+      $messenger->addMessage($this->t('Site API Key is not set.'), $messenger::TYPE_WARNING);
     }
     elseif ($site_config->get('siteapikey') !== $form_state->getValue('siteapikey')) {
       $siteapiflag = 1;

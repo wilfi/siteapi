@@ -5,10 +5,68 @@
  * Install, update and uninstall functions for sitesettings_api module.
  */
 
+use Drupal\user\Entity\Role;
+use Drupal\user\RoleInterface;
+
 /**
  * Implements hook_uninstall().
  */
 function sitesettings_api_uninstall() {
   // Remove the previously set Site API Key configuration.
   \Drupal::configFactory()->getEditable('system.site')->clear('siteapikey')->save();
+
+  // Revoke rest permissions.
+  $roles = Role::loadMultiple([
+    RoleInterface::ANONYMOUS_ID,
+    RoleInterface::AUTHENTICATED_ID,
+  ]);
+
+  $issueAccessPermissions = [
+    "restful get custom_node",
+  ];
+
+  foreach ($issueAccessPermissions as $permission) {
+    $roles[RoleInterface::AUTHENTICATED_ID]->revokePermission($permission)->save();
+    $roles[RoleInterface::ANONYMOUS_ID]->revokePermission($permission)->save();
+  }
+}
+
+/**
+ * Implements hook_install().
+ */
+function sitesettings_api_install() {
+  // Grant permission for custom_node rest plugin.
+  $roles = Role::loadMultiple([
+    RoleInterface::ANONYMOUS_ID,
+    RoleInterface::AUTHENTICATED_ID,
+  ]);
+
+  $issueAccessPermissions = [
+    "restful get custom_node",
+  ];
+
+  foreach ($issueAccessPermissions as $permission) {
+    $roles[RoleInterface::AUTHENTICATED_ID]->grantPermission($permission)->save();
+    $roles[RoleInterface::ANONYMOUS_ID]->grantPermission($permission)->save();
+  }
+}
+
+/**
+ * Grant custom_node permission.
+ */
+function sitesettings_api_update_8100() {
+  // Grant permission for custom_node rest plugin.
+  $roles = Role::loadMultiple([
+    RoleInterface::ANONYMOUS_ID,
+    RoleInterface::AUTHENTICATED_ID,
+  ]);
+
+  $issueAccessPermissions = [
+    "restful get custom_node",
+  ];
+
+  foreach ($issueAccessPermissions as $permission) {
+    $roles[RoleInterface::AUTHENTICATED_ID]->grantPermission($permission)->save();
+    $roles[RoleInterface::ANONYMOUS_ID]->grantPermission($permission)->save();
+  }
 }
