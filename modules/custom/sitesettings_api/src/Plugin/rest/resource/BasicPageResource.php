@@ -11,8 +11,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Cache\CacheableResponseInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+
 /**
- * Annotation for get method
+ * Annotation for get method.
  *
  * @RestResource(
  *   id = "custom_node",
@@ -22,8 +23,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
  *   }
  * )
  */
-class BasicPageResource extends ResourceBase
-{
+class BasicPageResource extends ResourceBase {
   /**
    * A current user instance.
    *
@@ -60,6 +60,10 @@ class BasicPageResource extends ResourceBase
    *   A logger instance.
    * @param \Drupal\Core\Session\AccountProxyInterface $current_user
    *   A current user instance.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The config factory.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entitytype_manager
+   *   The entitytype_manager factory.
    */
   public function __construct(
     array $configuration,
@@ -69,18 +73,17 @@ class BasicPageResource extends ResourceBase
     LoggerInterface $logger,
     AccountProxyInterface $current_user,
     ConfigFactoryInterface $configFactory,
-    EntityTypeManagerInterface $entitytype_manager)
-  {
+    EntityTypeManagerInterface $entitytype_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats, $logger);
     $this->currentUser = $current_user;
     $this->configFactory = $configFactory;
     $this->entityTypeManager = $entitytype_manager;
   }
+
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
-  {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
       $plugin_id,
@@ -92,6 +95,7 @@ class BasicPageResource extends ResourceBase
       $container->get('entity_type.manager')
     );
   }
+
   /**
    * Responds to GET requests.
    *
@@ -100,19 +104,18 @@ class BasicPageResource extends ResourceBase
    * @throws \Symfony\Component\HttpKernel\Exception\HttpException
    *   Throws exception expected.
    */
-  public function get($site_api, $nid)
-  {
-    if($site_api && $nid){
+  public function get($site_api, $nid) {
+    if ($site_api && $nid) {
       $system_site = $this->configFactory->get('system.site');
       $config_api = $system_site->get('siteapikey');
 
-      if($config_api !== $site_api || empty($config_api)) {
-        return new ResourceResponse('access denied.',403);
+      if ($config_api !== $site_api || empty($config_api)) {
+        return new ResourceResponse('access denied.', 403);
       }
 
       // Load node based on nid.
       $node = $this->entityTypeManager->getStorage('node')->load($nid);
-      if($node instanceof NodeInterface && $node->getType() == 'page'){
+      if ($node instanceof NodeInterface && $node->getType() == 'page') {
         // Sets node object for response.
         $response_result[$node->id()] = $node;
         $response = new ResourceResponse($response_result);
@@ -127,4 +130,5 @@ class BasicPageResource extends ResourceBase
     }
     return new ResourceResponse('Node id required.', 400);
   }
+
 }

@@ -6,10 +6,14 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Path\PathValidatorInterface;
 use Drupal\Core\Routing\RequestContext;
+use Drupal\path_alias\AliasManagerInterface;
 use Drupal\system\Form\SiteInformationForm;
 use Drupal\Core\Messenger\MessengerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * Extend site settings form.
+ */
 class SiteSettingsFormExtended extends SiteInformationForm {
 
   /**
@@ -18,6 +22,7 @@ class SiteSettingsFormExtended extends SiteInformationForm {
    * @var \Drupal\Core\Messenger\MessengerInterface
    */
   protected $messenger;
+
   /**
    * Constructs SiteSettingsFormExtended .
    *
@@ -32,8 +37,7 @@ class SiteSettingsFormExtended extends SiteInformationForm {
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger service.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, $alias_manager, PathValidatorInterface $path_validator, RequestContext $request_context, MessengerInterface $messenger)
-  {
+  public function __construct(ConfigFactoryInterface $config_factory, AliasManagerInterface $alias_manager, PathValidatorInterface $path_validator, RequestContext $request_context, MessengerInterface $messenger) {
     parent::__construct($config_factory, $alias_manager, $path_validator, $request_context);
     $this->messenger = $messenger;
   }
@@ -41,8 +45,7 @@ class SiteSettingsFormExtended extends SiteInformationForm {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container)
-  {
+  public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
       $container->get('path_alias.manager'),
@@ -52,27 +55,29 @@ class SiteSettingsFormExtended extends SiteInformationForm {
     );
   }
 
-
   /**
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $site_config = $this->config('system.site');
-    $form =  parent::buildForm($form, $form_state);
+    $form = parent::buildForm($form, $form_state);
     // New siteapikey field.
     $form['site_information']['siteapikey'] = [
       '#type' => 'textfield',
-      '#title' => t('Site API Key'),
+      '#title' => $this->t('Site API Key'),
       '#default_value' => $site_config->get('siteapikey') ?: "No API Key yet",
-      '#description' => t("Site API Key"),
+      '#description' => $this->t("Site API Key"),
     ];
 
     // Update submit label.
-    $form['actions']['submit']['#value'] = t('Update Configuration');
+    $form['actions']['submit']['#value'] = $this->t('Update Configuration');
 
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $site_config = $this->config('system.site');
     $messenger = $this->messenger;
@@ -80,24 +85,26 @@ class SiteSettingsFormExtended extends SiteInformationForm {
     // Default flag to check if site_api is saved.
     $siteapiflag = 0;
     // Show status message only if user value is diff from previous.
-    if(empty($form_state->getValue('siteapikey')) || $form_state->getValue('siteapikey') === "No API Key yet") {
+    if (empty($form_state->getValue('siteapikey')) || $form_state->getValue('siteapikey') === "No API Key yet") {
       // Clear existing siteapikey.
       $this->config('system.site')->clear('siteapikey')->save();
       $messenger->addMessage($this->t('Site API Key is not set.'), $messenger::TYPE_STATUS);
-    } else if($site_config->get('siteapikey') !== $form_state->getValue('siteapikey')) {
+    }
+    elseif ($site_config->get('siteapikey') !== $form_state->getValue('siteapikey')) {
       $siteapiflag = 1;
     }
 
     // Save config only if existing config is diff from user input.
-    if($siteapiflag == 1) {
+    if ($siteapiflag == 1) {
       $site_config->set('siteapikey', $form_state->getValue('siteapikey'))->save();
     }
 
     // Display message if flag is set and siteapikey config exists.
-    if($site_config->get('siteapikey') && $siteapiflag == 1) {
+    if ($site_config->get('siteapikey') && $siteapiflag == 1) {
       $messenger->addMessage($this->t('Site API Key updated.'), $messenger::TYPE_STATUS);
     }
 
     parent::submitForm($form, $form_state);
   }
+
 }
