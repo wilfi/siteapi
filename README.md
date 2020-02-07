@@ -20,3 +20,9 @@ This module needs to alter the existing Drupal "Site Information" form. Specific
 
 http://localhost/page_json/FOOBAR12345/17
 
+# Testable URL
+http://s5e3ca3973ec0bsbjmyzsblb.devcloud.acquia-sites.com/page_json/xyz1234/1
+Login - http://s5e3ca3973ec0bsbjmyzsblb.devcloud.acquia-sites.com/user
+Username - admin
+Password - admin
+
